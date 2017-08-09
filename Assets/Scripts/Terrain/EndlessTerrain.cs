@@ -34,9 +34,9 @@ public class EndlessTerrain : MonoBehaviour
             meshFilter = meshObject.AddComponent<MeshFilter>();
             meshCollider = meshObject.AddComponent<MeshCollider>();
 
-            meshObject.transform.position = positionV3 * scale;
+            meshObject.transform.position = positionV3 * mapGenerator.terrainData.uniformScale;
             meshObject.transform.parent = parent;
-            meshObject.transform.localScale = Vector3.one * scale;
+            meshObject.transform.localScale = Vector3.one * mapGenerator.terrainData.uniformScale; ;
 
             SetVisible(false);
 
@@ -57,10 +57,6 @@ public class EndlessTerrain : MonoBehaviour
         {
             mapData = data;
             mapDataReceived = true;
-
-            int size = MapGenerator.mapChunkSize;
-            Texture2D texture = TextureGenerator.GenerateTextureFromColorMap(mapData.colorMap, size, size);
-            meshRenderer.material.mainTexture = texture;
 
             UpdateChunk();
         }
@@ -170,7 +166,7 @@ public class EndlessTerrain : MonoBehaviour
         }
     }
 
-    private const float scale = 1f;
+
     private const float viewerMoveForUpdateThreshold = 25f;
     private const float sqrViewerMoveForUpdateThreshold = viewerMoveForUpdateThreshold * viewerMoveForUpdateThreshold;
 
@@ -194,7 +190,7 @@ public class EndlessTerrain : MonoBehaviour
         mapGenerator = FindObjectOfType<MapGenerator>(); // gross
 
         maxViewDistance = detailLevels[detailLevels.Length - 1].distanceThreshold;
-        chunkSize = MapGenerator.mapChunkSize - 1;
+        chunkSize = mapGenerator.mapChunkSize - 1;
         chunksVisibleInDistance = Mathf.RoundToInt(maxViewDistance / chunkSize);
 
         // run once to generate start chunks
@@ -203,7 +199,7 @@ public class EndlessTerrain : MonoBehaviour
 
     private void Update()
     {
-        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / scale;
+        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / mapGenerator.terrainData.uniformScale;
 
         if ((previousViewerPosition - viewerPosition).sqrMagnitude > sqrViewerMoveForUpdateThreshold)
         {

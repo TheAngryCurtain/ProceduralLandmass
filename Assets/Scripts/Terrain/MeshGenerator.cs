@@ -15,8 +15,11 @@ public class MeshData
     private int triangleIndex = 0;
     private int borderTriangleIndex = 0;
 
-    public MeshData(int verticesPerLine)
+    private bool useFlatShading;
+
+    public MeshData(int verticesPerLine, bool flatShaded)
     {
+        useFlatShading = flatShaded;
         vertices = new Vector3[verticesPerLine * verticesPerLine];
         uvs = new Vector2[verticesPerLine * verticesPerLine];
         triangles = new int[(verticesPerLine - 1) * (verticesPerLine - 1) * 6];
@@ -58,7 +61,35 @@ public class MeshData
         }
     }
 
-    public void BakeNormals()
+    private void FlatShading()
+    {
+        Vector3[] flatShadedVertices = new Vector3[triangles.Length];
+        Vector2[] flatShadedUvs = new Vector2[triangles.Length];
+
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            flatShadedVertices[i] = vertices[triangles[i]];
+            flatShadedUvs[i] = uvs[triangles[i]];
+            triangles[i] = i;
+        }
+
+        vertices = flatShadedVertices;
+        uvs = flatShadedUvs;
+    }
+
+    public void ProcessMesh()
+    {
+        if (useFlatShading)
+        {
+            FlatShading();
+        }
+        else
+        {
+            BakeNormals();
+        }
+    }
+
+    private void BakeNormals()
     {
         bakedNormals = CalculateNormals();
     }
@@ -131,7 +162,15 @@ public class MeshData
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
-        mesh.normals = bakedNormals;
+
+        if (useFlatShading)
+        {
+            mesh.RecalculateNormals();
+        }
+        else
+        {
+            mesh.normals = bakedNormals;
+        }
 
         return mesh;
     }
@@ -139,7 +178,7 @@ public class MeshData
 
 public static class MeshGenerator
 {
-    public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightModifier, AnimationCurve heightCurve, int lod)
+    public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightModifier, AnimationCurve heightCurve, int lod, bool flatShading)
     {
         int meshSimplificationIncrement = (lod == 0 ? 1 : lod * 2);
         int borderedSize = heightMap.GetLength(0);
@@ -154,7 +193,7 @@ public static class MeshGenerator
 
         int verticesPerLine = (meshSize - 1) / meshSimplificationIncrement + 1;
 
-        MeshData meshData = new MeshData(verticesPerLine);
+        MeshData meshData = new MeshData(verticesPerLine, flatShading);
         int[,] vertexIndicesMap = new int[borderedSize, borderedSize];
         int meshVertexIndex = 0;
         int borderVertexIndex = -1;
@@ -207,7 +246,7 @@ public static class MeshGenerator
             }
         }
 
-        meshData.BakeNormals();
+        meshData.ProcessMesh();
 
         return meshData;
     }
