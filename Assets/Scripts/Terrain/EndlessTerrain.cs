@@ -12,8 +12,10 @@ public class EndlessTerrain : MonoBehaviour
 
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
+        private MeshCollider meshCollider;
         private LODInfo[] detailLevels;
         private LODMesh[] lodMeshes;
+        private LODMesh collisionLODMesh;
         private MapData mapData;
         private bool mapDataReceived;
         private int previousLodIndex = -1;
@@ -30,6 +32,7 @@ public class EndlessTerrain : MonoBehaviour
             meshRenderer.material = material;
 
             meshFilter = meshObject.AddComponent<MeshFilter>();
+            meshCollider = meshObject.AddComponent<MeshCollider>();
 
             meshObject.transform.position = positionV3 * scale;
             meshObject.transform.parent = parent;
@@ -41,6 +44,10 @@ public class EndlessTerrain : MonoBehaviour
             for (int i = 0; i < detailLevels.Length; i++)
             {
                 lodMeshes[i] = new LODMesh(detailLevels[i].lod, UpdateChunk);
+                if (detailLevels[i].useForCollider)
+                {
+                    collisionLODMesh = lodMeshes[i];
+                }
             }
 
             mapGenerator.RequestMapData(position, OnMapDataReceived);
@@ -94,6 +101,19 @@ public class EndlessTerrain : MonoBehaviour
                         }
                     }
 
+                    // only set collsion mesh if the lod is 0 (player is in it)
+                    if (lodDetailIndex == 0)
+                    {
+                        if (collisionLODMesh.hasMesh)
+                        {
+                            meshCollider.sharedMesh = collisionLODMesh.mesh;
+                        }
+                        else if (!collisionLODMesh.hasRequestedMesh)
+                        {
+                            collisionLODMesh.RequestMesh(mapData);
+                        }
+                    }
+
                     lastViewedChunks.Add(this);
                 }
 
@@ -117,6 +137,7 @@ public class EndlessTerrain : MonoBehaviour
     {
         public int lod;
         public float distanceThreshold;
+        public bool useForCollider;
     }
 
     public class LODMesh

@@ -15,8 +15,10 @@ public static class TextureGenerator
         return texture;
     }
 
-    public static Texture2D GenerateTextureFromHeightMap(float[,] noise, int width, int height)
+    public static Texture2D GenerateTextureFromHeightMap(float[,] noise)
     {
+        int width = noise.GetLength(0);
+        int height = noise.GetLength(1);
         Color[] colorMap = new Color[width * height];
         for (int y = 0; y < height; y++)
         {
