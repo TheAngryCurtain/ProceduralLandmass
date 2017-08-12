@@ -178,7 +178,7 @@ public class MeshData
 
 public static class MeshGenerator
 {
-    public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightModifier, AnimationCurve heightCurve, int lod, bool flatShading)
+    public static MeshData GenerateTerrainMesh(float[,] heightMap, MeshSettings settings, int lod)
     {
         int meshSimplificationIncrement = (lod == 0 ? 1 : lod * 2);
         int borderedSize = heightMap.GetLength(0);
@@ -188,12 +188,9 @@ public static class MeshGenerator
         float topLeftX = (meshSizeUnsimplified - 1) / -2f;
         float topLeftZ = (meshSizeUnsimplified - 1) / 2f;
 
-        // make local copy of curve so that each thread has one
-        AnimationCurve heightCurveCopy = new AnimationCurve(heightCurve.keys);
-
         int verticesPerLine = (meshSize - 1) / meshSimplificationIncrement + 1;
 
-        MeshData meshData = new MeshData(verticesPerLine, flatShading);
+        MeshData meshData = new MeshData(verticesPerLine, settings.useFlatShading);
         int[,] vertexIndicesMap = new int[borderedSize, borderedSize];
         int meshVertexIndex = 0;
         int borderVertexIndex = -1;
@@ -225,8 +222,8 @@ public static class MeshGenerator
             {
                 int vertexIndex = vertexIndicesMap[x, y];
                 Vector2 percent = new Vector2((x - meshSimplificationIncrement) / (float)meshSize, (y - meshSimplificationIncrement) / (float)meshSize);
-                float height = heightCurveCopy.Evaluate(heightMap[x, y]) * heightModifier;
-                Vector3 vertexPosition = new Vector3(topLeftX + percent.x * meshSizeUnsimplified, height, topLeftZ - percent.y * meshSizeUnsimplified);
+                float height = heightMap[x, y];
+                Vector3 vertexPosition = new Vector3((topLeftX + percent.x * meshSizeUnsimplified) * settings.meshScale, height, (topLeftZ - percent.y * meshSizeUnsimplified) * settings.meshScale);
 
                 meshData.AddVertex(vertexPosition, percent, vertexIndex);
 
